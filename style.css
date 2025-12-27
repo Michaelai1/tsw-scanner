@@ -1,0 +1,763 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --slate-950: #020617;
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-400: #94a3b8;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --green-500: #10b981;
+    --red-500: #ef4444;
+    --white: #f8fafc;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #0f172a;
+    color: var(--white);
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+/* Screen Management */
+.screen {
+    display: none;
+    min-height: 100vh;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 8px;
+    color: var(--white);
+    font-weight: 500;
+    z-index: 1000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.success {
+    border-left: 4px solid var(--green-500);
+}
+
+.toast.error {
+    border-left: 4px solid var(--red-500);
+}
+
+/* Login Screen */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.glass-card {
+    background: #1e293b;
+    border: none;
+    border-radius: 12px;
+    padding: 3.5rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.brand-header {
+    text-align: center;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-icon {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.6)) drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.login-icon svg {
+    width: 64px;
+    height: 64px;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.brand-title {
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    line-height: 1.2;
+    font-size: 1.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f59e0b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    width: 100%;
+    text-align: center;
+}
+
+.brand-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+    margin-bottom: 3rem;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@media (max-width: 480px) {
+    .brand-title {
+        font-size: 1.5rem;
+    }
+    
+    .brand-subtitle {
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.input-label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.input-field {
+    width: 100%;
+    height: 60px;
+    font-size: 1rem;
+    padding: 0.875rem 1rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: var(--white);
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    transition: all 0.2s ease;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.input-field::placeholder {
+    color: var(--slate-600);
+}
+
+/* Buttons */
+.btn-primary {
+    width: 100%;
+    height: 60px;
+    padding: 0.875rem 1.5rem;
+    background: #f59e0b;
+    color: #0f172a;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.btn-primary:hover {
+    background: var(--amber-600);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    padding: 0.625rem 1.25rem;
+    background: transparent;
+    color: var(--slate-400);
+    border: 1px solid var(--slate-800);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.btn-secondary:hover {
+    background: var(--slate-800);
+    border-color: var(--slate-700);
+    color: var(--white);
+}
+
+.btn-action {
+    padding: 0.625rem 1.25rem;
+    background: var(--amber-500);
+    color: var(--slate-950);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.btn-action:hover {
+    background: var(--amber-600);
+    transform: translateY(-1px);
+}
+
+.btn-action.checkin {
+    background: var(--green-500);
+    color: var(--white);
+}
+
+.btn-action.checkin:hover {
+    background: #059669;
+}
+
+/* Dashboard */
+.dashboard-header {
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+#dashboardScreen {
+    padding: 1rem;
+}
+
+#dashboardScreen .dashboard-header {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-title {
+    font-size: 1.5rem;
+    color: var(--amber-500);
+    font-weight: 900;
+    margin: 0;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.crew-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--slate-400);
+}
+
+.dashboard-main {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--slate-800);
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    color: var(--slate-400);
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.tab-btn:hover {
+    color: var(--white);
+}
+
+.tab-btn.active {
+    color: var(--amber-500);
+    border-bottom-color: var(--amber-500);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Scan Tool Tab */
+.scan-container {
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.scan-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.scan-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.scan-header p {
+    color: var(--slate-400);
+    font-size: 0.875rem;
+}
+
+.scan-input-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.scan-input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    background: var(--slate-950);
+    border: 1px solid var(--slate-800);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    height: 48px;
+}
+
+.scan-input:focus {
+    outline: none;
+    border-color: var(--amber-500);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.scan-input-group .btn-primary {
+    width: auto;
+    min-width: 120px;
+    height: 48px;
+}
+
+.tool-result {
+    min-height: 200px;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--amber-500);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.error-message {
+    background: var(--slate-900);
+    border: 1px solid var(--red-500);
+    color: var(--red-500);
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--slate-400);
+    font-size: 1rem;
+}
+
+.success {
+    background: var(--slate-900);
+    border: 1px solid var(--green-500);
+    color: var(--green-500);
+    padding: 1.25rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+/* Tool Card */
+.tool-card {
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.tool-image-container {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--slate-800);
+}
+
+.tool-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tool-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--slate-600);
+    font-size: 0.75rem;
+}
+
+.tool-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.tool-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.tool-status {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    align-self: flex-start;
+}
+
+.tool-status.available,
+.tool-status.in_shop {
+    background: var(--green-500);
+    color: var(--white);
+}
+
+.tool-status.checked_out {
+    background: var(--red-500);
+    color: var(--white);
+}
+
+.tool-status.unknown,
+.tool-status.other {
+    background: var(--slate-600);
+    color: var(--white);
+}
+
+.tool-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* My Tools Tab */
+.tools-container {
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.tools-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.tools-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tool-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.tool-item:hover {
+    border-color: var(--slate-700);
+    background: var(--slate-800);
+}
+
+.tool-item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--slate-800);
+    flex-shrink: 0;
+}
+
+.tool-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tool-item-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--slate-600);
+    font-size: 0.75rem;
+}
+
+.tool-item-info {
+    flex: 1;
+}
+
+.tool-item-info h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.tool-item-info p {
+    font-size: 0.875rem;
+    color: var(--slate-400);
+    margin-bottom: 0.5rem;
+}
+
+.tool-item-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tool-item-status.checked_out {
+    background: var(--red-500);
+    color: var(--white);
+}
+
+/* Logout Button */
+#logoutBtn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+}
+
+/* TSW Return Message */
+.tsw-return-message {
+    background: var(--slate-900);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.tsw-return-message h3 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--amber-500);
+    margin-bottom: 1.5rem;
+}
+
+.tsw-return-message p {
+    font-size: 1.125rem;
+    color: var(--slate-400);
+    margin-bottom: 1rem;
+}
+
+.tsw-return-message .phone-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--amber-500);
+    margin-top: 1.5rem;
+}
+
+.tsw-return-message .phone-number a {
+    color: var(--amber-500);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.tsw-return-message .phone-number a:hover {
+    color: var(--amber-600);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .dashboard-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.25rem;
+    }
+    
+    .tool-card {
+        padding: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tool-image-container {
+        width: 100%;
+        height: 200px;
+    }
+
+    .tool-info {
+        width: 100%;
+    }
+
+    .tool-actions {
+        width: 100%;
+    }
+
+    .tool-actions .btn-action {
+        width: 100%;
+    }
+
+    .scan-container {
+        padding: 1.5rem;
+    }
+
+    .tools-container {
+        padding: 1.5rem;
+    }
+
+    .scan-input-group {
+        flex-direction: column;
+    }
+
+    .scan-input-group .btn-primary {
+        width: 100%;
+    }
+
+    .tool-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tool-item-image {
+        width: 100%;
+        height: 200px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+}
