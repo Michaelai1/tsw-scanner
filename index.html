@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGen AI - Asset Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="glass-card">
+                <div class="brand-header">
+                    <div class="login-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="brand-title">TSW Tracking System</h1>
+                    <p class="brand-subtitle">POWERED BY NEXTGEN AI</p>
+                </div>
+                <div class="login-form">
+                    <label for="crewPin" class="input-label">Enter Crew PIN to continue</label>
+                    <input 
+                        type="text" 
+                        id="crewPin" 
+                        class="input-field" 
+                        placeholder="Enter Crew ID"
+                        autocomplete="off"
+                    >
+                    <button id="loginBtn" class="btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Screen (Unauthenticated Scan) -->
+    <div id="publicScreen" class="screen">
+        <div class="public-container">
+            <div class="public-card">
+                <h1 class="public-headline">PROPERTY OF TSW - PLEASE RETURN</h1>
+                
+                <div class="public-phone">
+                    <a href="tel:+13175089502" class="phone-link">(317) 508-9502</a>
+                </div>
+                
+                <div class="public-divider"></div>
+                
+                <p class="public-message">
+                    If you are a crew member trying to check out, please make sure you are <strong>not in Private Mode</strong>.
+                </p>
+                
+                <button id="publicLoginBtn" class="btn-primary btn-large">MEMBER LOGIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">ASSET CONTROL</h1>
+                <div class="header-actions">
+                    <span class="crew-name" id="crewNameDisplay"></span>
+                    <button id="logoutBtn" class="btn-secondary">LOGOUT</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-main">
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="scan">SCAN TOOL</button>
+                <button class="tab-btn" data-tab="search">ALL TOOLS</button>
+                <button class="tab-btn" data-tab="mytools">MY TOOLS</button>
+            </div>
+
+            <!-- Scan Tool Tab -->
+            <div id="scanTab" class="tab-content active">
+                <div class="scan-container">
+                    <div class="scan-header">
+                        <h2>Tool Scanner</h2>
+                        <p>Scan a tool ID or enter manually</p>
+                    </div>
+                    <div class="scan-input-group">
+                        <input 
+                            type="text" 
+                            id="toolScanInput" 
+                            class="scan-input" 
+                            placeholder="Enter or scan Tool ID"
+                            autocomplete="off"
+                        >
+                        <button id="scanBtn" class="btn-primary">SCAN</button>
+                    </div>
+                    <div id="toolResult" class="tool-result"></div>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="searchTab" class="tab-content">
+                <div class="search-container">
+                    <div class="search-header">
+                        <h2>All Tools</h2>
+                        <p>Search tools by name or ID</p>
+                    </div>
+                    <div class="search-controls">
+                        <div class="search-input-group">
+                            <input 
+                                type="text" 
+                                id="searchInput" 
+                                class="search-input" 
+                                placeholder="Search by name or ID..."
+                                autocomplete="off"
+                            >
+                        </div>
+                        <button id="myToolsFilterBtn" class="btn-secondary filter-toggle">
+                            <span id="myToolsFilterText">Show My Items</span>
+                        </button>
+                    </div>
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+            </div>
+
+            <!-- My Tools Tab -->
+            <div id="mytoolsTab" class="tab-content">
+                <div class="tools-container">
+                    <div class="tools-header">
+                        <h2>My Checked Out Tools</h2>
+                        <button id="refreshToolsBtn" class="btn-secondary">REFRESH</button>
+                    </div>
+                    <div id="toolsList" class="tools-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_CONFIG = {
+            WEBHOOK_URL: 'https://michaelcarey.app.n8n.cloud/webhook/8a5874ca-1694-48fa-a908-cde99a3a9af8',
+            API_KEY: 'sk_foreman_aK19zJb7pQ3xR4sV9zLq8mN'
+        };
+
+        // Global tools cache
+        window.allTools = [];
+        window.currentUser = null;
+        window.showMyToolsOnly = false;
+
+        // Master Webhook Function
+        async function callWebhook(action, payload) {
+            try {
+                const response = await fetch(API_CONFIG.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': API_CONFIG.API_KEY
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        ...payload
+                    })
+                });
+
+                // Try to parse response even if status is not OK to see error message
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = await response.text();
+                }
+
+                if (!response.ok) {
+                    console.error('HTTP error response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: data
+                    });
+                    
+                    if (response.status === 403) {
+                        throw new Error(`Authentication failed (403). Please check your API key in the code matches the one configured in n8n.`);
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(data)}`);
+                }
+                
+                console.log('Raw webhook response:', JSON.stringify(data, null, 2));
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                // Check if workflow is running async (n8n cloud sometimes does this)
+                if (data && data.message && data.message.includes('Workflow was started')) {
+                    console.warn('⚠️ n8n workflow is running asynchronously. Please check:');
+                    console.warn('1. Is the workflow ACTIVE in n8n?');
+                    console.warn('2. Does the "Respond to Webhook" node exist and is it the last node in the verify_crew path?');
+                    console.warn('3. Try testing the workflow directly in n8n to verify it returns { "valid": true }');
+                }
+                
+                // Handle string responses that need parsing
+                if (typeof data === 'string') {
+                    try {
+                        data = JSON.parse(data);
+                    } catch (e) {
+                        // If it's not valid JSON, return as-is
+                        return data;
+                    }
+                }
+                
+                // Handle array responses from n8n
+                // For 'get_all_tools', return the full array; for other actions, return first element
+                if (Array.isArray(data) && data.length > 0) {
+                    if (action === 'get_all_tools') {
+                        return data; // Return full array for get_all_tools
+                    }
+                    return data[0]; // For other actions, return first element
+                }
+                return data;
+            } catch (error) {
+                console.error('Webhook call failed:', error);
+                throw error;
+            }
+        }
+
+        // Utility Functions
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function getCrewData() {
+            const crewData = localStorage.getItem('crew');
+            return crewData ? JSON.parse(crewData) : null;
+        }
+
+        function saveCrewData(crew) {
+            localStorage.setItem('crew', JSON.stringify(crew));
+        }
+
+        function clearCrewData() {
+            localStorage.removeItem('crew');
+        }
+
+        // Login Handler
+        async function handleLogin() {
+            const pinInput = document.getElementById('crewPin');
+            const pin = pinInput.value.trim();
+
+            if (!pin) {
+                showToast('Please enter a Crew ID', 'error');
+                return;
+            }
+
+            try {
+                const result = await callWebhook('verify_crew', { pin: pin });
+                
+                // Debug logging
+                console.log('Full login response:', JSON.stringify(result, null, 2));
+                
+                // Check if n8n returned async message - this shouldn't happen but handle it gracefully
+                if (result && result.message && result.message.includes('Workflow was started')) {
+                    console.error('⚠️ n8n workflow is still running asynchronously. This is an n8n configuration issue.');
+                    console.error('Please check:');
+                    console.error('1. The workflow is ACTIVE in n8n');
+                    console.error('2. The webhook Response Mode is set to "Using \'Respond to Webhook\' Node"');
+                    console.error('3. The "Respond to Webhook" node is the last node in the verify_crew path');
+                    console.error('4. Try deactivating and reactivating the workflow');
+                    showToast('Workflow configuration issue. Please check n8n settings.', 'error');
+                    return;
+                }
+                
+                // Handle array response like [{ "valid": true }]
+                let responseData = result;
+                if (Array.isArray(result) && result.length > 0) {
+                    responseData = result[0];
+                }
+                
+                console.log('Processed response data:', JSON.stringify(responseData, null, 2));
+                
+                // Check if valid exists and is truthy
+                const isValid = responseData && (
+                    responseData.valid === true || 
+                    responseData.valid === 'true' || 
+                    responseData.valid === 'True' || 
+                    responseData.valid === 1
+                );
+                
+                console.log('Is valid?', isValid, 'responseData.valid:', responseData?.valid);
+                
+                if (isValid) {
+                    // Save crew data - n8n currently only returns {valid: true}
+                    // So we create crew object from the PIN
+                    const crewData = responseData.crew || { login_id: pin, name: pin };
+                    saveCrewData(crewData);
+                    window.currentUser = crewData;
+                    
+                    // Display crew name
+                    const displayName = crewData.name || crewData.login_id || pin;
+                    document.getElementById('crewNameDisplay').textContent = displayName;
+                    
+                    // Load all tools in the background
+                    loadAllTools();
+                    
+                    // Check if there's a tool_id in URL (from QR scan) - preserve it for auto-scan
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const toolId = urlParams.get('tool_id') || urlParams.get('id');
+                    
+                    showScreen('dashboardScreen');
+                    
+                    // Ensure scan tab is active (check in/check out page)
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.querySelector('[data-tab="scan"]').classList.add('active');
+                    document.getElementById('scanTab').classList.add('active');
+                    
+                    // If there's a tool_id in URL from QR scan, automatically scan it after login
+                    if (toolId) {
+                        setTimeout(() => handleScanTool(toolId), 100);
+                    }
+                    
+                    pinInput.value = '';
+                } else {
+                    console.log('Login failed - responseData:', JSON.stringify(responseData, null, 2));
+                    showToast('Invalid Crew ID. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed. Please check your connection.', 'error');
+            }
+        }
+
+        // Scan Tool Handler
+        async function handleScanTool(toolIdFromUrl = null) {
+            const toolInput = document.getElementById('toolScanInput');
+            const toolId = toolIdFromUrl || toolInput.value.trim();
+
+            if (!toolId) {
+                showToast('Please enter a Tool ID', 'error');
+                return;
+            }
+
+            // Check if user is logged in
+            const crew = getCrewData();
+            if (!crew) {
+                // Show TSW return message when not logged in
+                const resultDiv = document.getElementById('toolResult');
+                resultDiv.innerHTML = `
+                    <div class="tsw-return-message">
+                        <h3>Please Return to TSW</h3>
+                        <p>This tool must be returned through your authorized system.</p>
+                        <p class="phone-number">Call: <a href="tel:+13175089502">(317) 508-9502</a></p>
+                    </div>
+                `;
+                // Clear URL parameter
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+
+            const resultDiv = document.getElementById('toolResult');
+            resultDiv.innerHTML = '<div class="loading">Scanning tool...</div>';
+
+            try {
+                const result = await callWebhook('search_tool', { tool_id: toolId });
+                
+                // Handle array response from n8n and map field names
+                let tool = null;
+                if (Array.isArray(result) && result.length > 0) {
+                    const toolData = result[0];
+                    // Map n8n fields to expected format
+                    tool = {
+                        id: toolData.tool_id,
+                        name: toolData.tool_name,
+                        status: toolData.current_holder || toolData.status,
+                        condition: toolData.condition,
+                        photo_url: toolData.photo_location
+                    };
+                } else if (result.tool) {
+                    tool = result.tool;
+                } else if (result.tool_id || result.tool_name) {
+                    // Handle direct object response with n8n field names
+                    tool = {
+                        id: result.tool_id,
+                        name: result.tool_name,
+                        status: result.current_holder || result.status,
+                        condition: result.condition,
+                        photo_url: result.photo_location
+                    };
+                }
+                
+                if (tool) {
+                    const status = (tool.status || '').toLowerCase();
+                    let statusClass = 'other';
+                    if (status === 'checked_out') statusClass = 'checked_out';
+                    else if (status === 'available' || status === 'in_shop' || status === 'shop') statusClass = 'in_shop';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="tool-card">
+                            <div class="tool-image-container">
+                                ${tool.photo_url ? 
+                                    `<img src="${tool.photo_url}" alt="${tool.name}" class="tool-image">` :
+                                    '<div class="tool-image-placeholder">No Image</div>'
+                                }
+                            </div>
+                            <div class="tool-info">
+                                <h3 class="tool-name">${tool.name || 'Unknown Tool'}</h3>
+                                <div class="tool-status ${statusClass}">
+                                    ${tool.status || 'Unknown'}
+                                </div>
+                            </div>
+                            <div class="tool-actions">
+                                ${status === 'available' || status === 'in_shop' || status === 'shop' ? 
+                                    `<button class="btn-action checkout" onclick="handleCheckout('${tool.id || toolId}')">
+                                        CHECK OUT
+                                    </button>` :
+                                    status === 'checked_out' ?
+                                    `<button class="btn-action checkin" onclick="handleCheckin('${tool.id || toolId}')">
+                                        CHECK IN
+                                    </button>` :
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                    // Clear the input and URL parameter
+                    toolInput.value = '';
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    resultDiv.innerHTML = '<div class="error-message">Tool not found</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error-message">Failed to scan tool. Please try again.</div>';
+                showToast('Failed to scan tool', 'error');
+            }
+        }
+
+        // Checkout Handler
+        async function handleCheckout(toolId) {
+            const crew = getCrewData();
+            if (!crew) {
+                showToast('Please login again', 'error');
+                showScreen('loginScreen');
+                return;
+            }
+
+            try {
+                const result = await callWebhook('checkout', { 
+                    tool_id: toolId, 
+                    crew_id: crew.login_id 
+                });
+                
+                showToast('Tool checked out successfully', 'success');
+                // Refresh the tool data and reload all tools cache
+                loadAllTools();
+                // Refresh search results if search tab is active
+                if (document.getElementById('searchTab').classList.contains('active')) {
+                    setTimeout(() => handleSearch(), 300);
+                }
+                setTimeout(() => handleScanTool(), 500);
+            } catch (error) {
+                showToast('Checkout failed. Please try again.', 'error');
+            }
+        }
+
+        // Checkin Handler
+        async function handleCheckin(toolId) {
+            const crew = getCrewData();
+            if (!crew) {
+                showToast('Please login again', 'error');
+                showScreen('loginScreen');
+                return;
+            }
+
+            try {
+                const result = await callWebhook('checkin', { 
+                    tool_id: toolId, 
+                    crew_id: crew.login_id 
+                });
+                
+                showToast('Tool checked in successfully', 'success');
+                // Refresh the tool data and reload all tools cache
+                loadAllTools();
+                // Refresh search results if search tab is active
+                if (document.getElementById('searchTab').classList.contains('active')) {
+                    setTimeout(() => handleSearch(), 300);
+                }
+                setTimeout(() => handleScanTool(), 500);
+            } catch (error) {
+                showToast('Check-in failed. Please try again.', 'error');
+            }
+        }
+
+        // Load All Tools (for search catalog)
+        async function loadAllTools() {
+            try {
+                const result = await callWebhook('get_all_tools', {});
+                
+                // Handle array response
+                let toolsArray = [];
+                if (Array.isArray(result)) {
+                    toolsArray = result;
+                } else if (result.tools && Array.isArray(result.tools)) {
+                    toolsArray = result.tools;
+                } else if (result && typeof result === 'object') {
+                    // If it's a single object, wrap it in an array
+                    toolsArray = [result];
+                }
+                
+                // Normalize tool data format (matching n8n response format)
+                window.allTools = toolsArray.map(tool => {
+                    // Handle n8n field names: "Tool ID", "Tool Name", "Photo", "Condition"
+                    const toolId = tool["Tool ID"] || tool.tool_id || tool.id;
+                    const toolName = tool["Tool Name"] || tool.tool_name || tool.name;
+                    const photoUrl = tool["Photo"] || tool.photo_location || tool.photo_url;
+                    const condition = tool["Condition"] || tool.condition;
+                    const status = tool.status || 'in_shop';
+                    
+                    // Determine if checked out (status is not "in_shop" and not null)
+                    const isCheckedOut = status && status !== 'in_shop' && status !== 'available' && status !== 'shop';
+                    const currentHolder = isCheckedOut ? status : null;
+                    
+                    return {
+                        id: toolId,
+                        name: toolName,
+                        status: status,
+                        current_holder: currentHolder,
+                        holder_name: isCheckedOut ? status : null,
+                        condition: condition,
+                        photo_url: photoUrl
+                    };
+                }).filter(tool => tool.id && tool.name); // Filter out invalid tools (like the one with null Tool ID)
+                
+                console.log('Loaded all tools:', window.allTools.length);
+                
+                // Immediately render all tools if search tab is active
+                if (document.getElementById('searchTab').classList.contains('active')) {
+                    handleSearch(); // This will show all tools since no filters are active
+                }
+            } catch (error) {
+                console.error('Failed to load all tools:', error);
+                // Don't show toast on background load failure
+            }
+        }
+
+        // Render Catalog (shows all tools or filtered list)
+        function renderCatalog(tools) {
+            const resultsDiv = document.getElementById('searchResults');
+            if (!resultsDiv) return;
+            
+            // Show count
+            const count = tools.length;
+            const countText = count === 1 ? 'Showing 1 Tool' : `Showing ${count} Tools`;
+            
+            // Render results
+            if (tools.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state">No tools found</div>';
+                return;
+            }
+            
+            const cardsHtml = tools.map(tool => {
+                const status = tool.status || '';
+                const statusLower = status.toLowerCase();
+                // Check if in shop (status is "in_shop", "available", "shop", or null/empty)
+                const isInShop = statusLower === 'in_shop' || statusLower === 'available' || statusLower === 'shop' || !status || !tool.current_holder;
+                // Check if checked out (status exists and is not in_shop/available/shop)
+                const isCheckedOut = status && !isInShop && tool.current_holder;
+                
+                let statusBadge = '';
+                if (isInShop) {
+                    statusBadge = '<span class="status-badge status-in-shop">IN SHOP</span>';
+                } else if (isCheckedOut) {
+                    // Use the status as holder name (e.g., "crew1" becomes "WITH CREW1")
+                    const holderName = tool.holder_name || tool.current_holder || status || 'Unknown';
+                    statusBadge = `<span class="status-badge status-checked-out">WITH ${holderName.toUpperCase()}</span>`;
+                } else {
+                    statusBadge = '<span class="status-badge status-other">UNKNOWN</span>';
+                }
+                
+                return `
+                    <div class="catalog-card" onclick="openToolDetail('${tool.id}')">
+                        <div class="catalog-card-image">
+                            ${tool.photo_url ? 
+                                `<img src="${tool.photo_url}" alt="${tool.name || 'Tool'}" onerror="this.parentElement.innerHTML='<div class=\\'catalog-image-placeholder\\'>No Image</div>'">` :
+                                '<div class="catalog-image-placeholder">No Image</div>'
+                            }
+                        </div>
+                        <div class="catalog-card-info">
+                            <h3 class="catalog-card-name">${tool.name || 'Unknown Tool'}</h3>
+                            <p class="catalog-card-id">ID: ${tool.id || 'N/A'}</p>
+                        </div>
+                        <div class="catalog-card-status">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add count display at the top
+            resultsDiv.innerHTML = `
+                <div class="catalog-count">${countText}</div>
+                <div class="catalog-cards-grid">
+                    ${cardsHtml}
+                </div>
+            `;
+        }
+
+        // Search Handler (instant filtering)
+        function handleSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            
+            // Filter tools - start with ALL tools
+            let filteredTools = [...window.allTools];
+            
+            // Apply "My Tools" filter if active
+            if (window.showMyToolsOnly && window.currentUser) {
+                const userId = window.currentUser.login_id || window.currentUser.id;
+                filteredTools = filteredTools.filter(tool => 
+                    tool.current_holder === userId || 
+                    tool.status === userId
+                );
+            }
+            
+            // Apply search term filter (if search term exists)
+            if (searchTerm) {
+                filteredTools = filteredTools.filter(tool => {
+                    const toolName = (tool.name || '').toLowerCase();
+                    const toolId = (tool.id || '').toLowerCase();
+                    return toolName.includes(searchTerm) || toolId.includes(searchTerm);
+                });
+            }
+            
+            // Render the filtered catalog (or all tools if no filters)
+            renderCatalog(filteredTools);
+        }
+
+        // Open Tool Detail Modal (reuse scan logic)
+        async function openToolDetail(toolId) {
+            const crew = getCrewData();
+            if (!crew) {
+                showToast('Please login again', 'error');
+                showScreen('loginScreen');
+                return;
+            }
+
+            // Find tool in cache
+            const tool = window.allTools.find(t => t.id === toolId);
+            if (!tool) {
+                // Fallback to API call if not in cache
+                try {
+                    const result = await callWebhook('search_tool', { tool_id: toolId });
+                    let toolData = null;
+                    if (Array.isArray(result) && result.length > 0) {
+                        const data = result[0];
+                        // Handle n8n field format
+                        const status = data.status || 'in_shop';
+                        const isCheckedOut = status && status !== 'in_shop' && status !== 'available' && status !== 'shop';
+                        toolData = {
+                            id: data["Tool ID"] || data.tool_id || data.id,
+                            name: data["Tool Name"] || data.tool_name || data.name,
+                            status: status,
+                            current_holder: isCheckedOut ? status : null,
+                            holder_name: isCheckedOut ? status : null,
+                            condition: data["Condition"] || data.condition,
+                            photo_url: data["Photo"] || data.photo_location || data.photo_url
+                        };
+                    } else if (result.tool) {
+                        toolData = result.tool;
+                    }
+                    
+                    if (toolData) {
+                        displayToolDetailModal(toolData);
+                    } else {
+                        showToast('Tool not found', 'error');
+                    }
+                } catch (error) {
+                    showToast('Failed to load tool details', 'error');
+                }
+                return;
+            }
+            
+            displayToolDetailModal(tool);
+        }
+
+        // Display Tool Detail Modal
+        function displayToolDetailModal(tool) {
+            // Create modal overlay
+            let modal = document.getElementById('toolDetailModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'toolDetailModal';
+                modal.className = 'tool-detail-modal';
+                document.body.appendChild(modal);
+            }
+            
+            const status = tool.status || '';
+            const statusLower = status.toLowerCase();
+            // Check if in shop (status is "in_shop", "available", "shop", or null/empty)
+            const isInShop = statusLower === 'in_shop' || statusLower === 'available' || statusLower === 'shop' || !status || !tool.current_holder;
+            // Check if checked out (status exists and is not in_shop/available/shop)
+            const isCheckedOut = status && !isInShop && tool.current_holder;
+            
+            let statusClass = 'other';
+            let statusText = status || 'Unknown';
+            if (isCheckedOut) {
+                statusClass = 'checked_out';
+                statusText = tool.holder_name || tool.current_holder || status || 'Checked Out';
+            } else if (isInShop) {
+                statusClass = 'in_shop';
+                statusText = 'In Shop';
+            }
+            
+            modal.innerHTML = `
+                <div class="tool-detail-modal-content">
+                    <button class="tool-detail-modal-close" onclick="closeToolDetailModal()">&times;</button>
+                    <div class="tool-card">
+                        <div class="tool-image-container">
+                            ${tool.photo_url ? 
+                                `<img src="${tool.photo_url}" alt="${tool.name || 'Tool'}" class="tool-image" onerror="this.parentElement.innerHTML='<div class=\\'tool-image-placeholder\\'>No Image</div>'">` :
+                                '<div class="tool-image-placeholder">No Image</div>'
+                            }
+                        </div>
+                        <div class="tool-info">
+                            <h3 class="tool-name">${tool.name || 'Unknown Tool'}</h3>
+                            <p style="color: var(--slate-400); margin: 0.5rem 0;">ID: ${tool.id || 'N/A'}</p>
+                            <div class="tool-status ${statusClass}">
+                                ${statusText}
+                            </div>
+                        </div>
+                        <div class="tool-actions">
+                            ${isInShop ? 
+                                `<button class="btn-action checkout" onclick="handleCheckout('${tool.id}'); closeToolDetailModal();">
+                                    CHECK OUT
+                                </button>` :
+                                isCheckedOut ?
+                                `<button class="btn-action checkin" onclick="handleCheckin('${tool.id}'); closeToolDetailModal();">
+                                    CHECK IN
+                                </button>` :
+                                ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // Close Tool Detail Modal
+        function closeToolDetailModal() {
+            const modal = document.getElementById('toolDetailModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('toolDetailModal');
+            if (modal && modal.classList.contains('active')) {
+                const modalContent = modal.querySelector('.tool-detail-modal-content');
+                if (modalContent && !modalContent.contains(e.target) && !e.target.closest('.tool-detail-modal-content')) {
+                    closeToolDetailModal();
+                }
+            }
+        });
+
+        // Toggle My Tools Filter
+        function toggleMyToolsFilter() {
+            window.showMyToolsOnly = !window.showMyToolsOnly;
+            const btn = document.getElementById('myToolsFilterBtn');
+            const text = document.getElementById('myToolsFilterText');
+            
+            if (window.showMyToolsOnly) {
+                btn.classList.add('active');
+                text.textContent = 'Show All Items';
+            } else {
+                btn.classList.remove('active');
+                text.textContent = 'Show My Items';
+            }
+            
+            // Re-apply search (will show all tools if filter is off)
+            handleSearch();
+        }
+
+        // Load My Tools
+        async function loadMyTools() {
+            const crew = getCrewData();
+            if (!crew) {
+                showToast('Please login again', 'error');
+                showScreen('loginScreen');
+                return;
+            }
+
+            const toolsList = document.getElementById('toolsList');
+            toolsList.innerHTML = '<div class="loading">Loading your tools...</div>';
+
+            try {
+                const result = await callWebhook('get_crew_tools', { crew_id: crew.login_id });
+                
+                // Handle array response - extract first element if it's an array
+                let responseData = result;
+                if (Array.isArray(result) && result.length > 0) {
+                    responseData = result[0];
+                }
+                
+                // Get the tools array from the response
+                const toolsArray = responseData.tools || [];
+                
+                if (toolsArray && toolsArray.length > 0) {
+                    toolsList.innerHTML = toolsArray.map(tool => {
+                        // Map field names from n8n format to expected format
+                        const toolId = tool.tool_id || tool.id;
+                        const toolName = tool.tool_name || tool.name;
+                        
+                        return `
+                            <div class="tool-item">
+                                <div class="tool-item-image">
+                                    ${tool.photo_url || tool.photo_location ? 
+                                        `<img src="${tool.photo_url || tool.photo_location}" alt="${toolName || 'Tool'}">` :
+                                        '<div class="tool-item-placeholder">No Image</div>'
+                                    }
+                                </div>
+                                <div class="tool-item-info">
+                                    <h4>${toolName || 'Unknown Tool'}</h4>
+                                    <p>ID: ${toolId || 'N/A'}</p>
+                                    <span class="tool-item-status checked_out">Checked Out</span>
+                                </div>
+                                <div class="tool-actions">
+                                    <button class="btn-action checkin" onclick="handleCheckin('${toolId}')">
+                                        CHECK IN
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    toolsList.innerHTML = '<div class="empty-state">No tools checked out</div>';
+                }
+            } catch (error) {
+                toolsList.innerHTML = '<div class="error-message">Failed to load tools. Please try again.</div>';
+                showToast('Failed to load tools', 'error');
+            }
+        }
+
+        // Logout Handler
+        function handleLogout() {
+            clearCrewData();
+            showScreen('loginScreen');
+            document.getElementById('toolResult').innerHTML = '';
+            document.getElementById('toolsList').innerHTML = '';
+            document.getElementById('toolScanInput').value = '';
+        }
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                // Update active tab button
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update active tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                if (tab === 'mytools') {
+                    document.getElementById('mytoolsTab').classList.add('active');
+                    // Automatically load tools when switching to My Tools tab
+                    loadMyTools();
+                } else if (tab === 'search') {
+                    document.getElementById('searchTab').classList.add('active');
+                    // Show all tools immediately when switching to Search tab
+                    if (window.allTools && window.allTools.length > 0) {
+                        handleSearch(); // Will show all tools by default
+                    } else {
+                        // If tools haven't loaded yet, show loading state
+                        const resultsDiv = document.getElementById('searchResults');
+                        if (resultsDiv) {
+                            resultsDiv.innerHTML = '<div class="loading">Loading catalog...</div>';
+                        }
+                        // Load tools if not already loaded
+                        loadAllTools();
+                    }
+                } else {
+                    document.getElementById('scanTab').classList.add('active');
+                }
+            });
+        });
+
+        // Event Listeners
+        document.getElementById('loginBtn').addEventListener('click', handleLogin);
+        document.getElementById('crewPin').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        document.getElementById('scanBtn').addEventListener('click', () => handleScanTool());
+        document.getElementById('toolScanInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleScanTool();
+        });
+
+        document.getElementById('refreshToolsBtn').addEventListener('click', loadMyTools);
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', handleSearch);
+        }
+        
+        const myToolsFilterBtn = document.getElementById('myToolsFilterBtn');
+        if (myToolsFilterBtn) {
+            myToolsFilterBtn.addEventListener('click', toggleMyToolsFilter);
+        }
+
+        // Public Screen Login Button Handler
+        document.getElementById('publicLoginBtn').addEventListener('click', () => {
+            // Preserve tool_id from URL when switching to login
+            // Tool ID will remain in URL for post-login auto-scan
+            showScreen('loginScreen');
+        });
+
+        // Make functions globally available for onclick handlers
+        window.handleCheckout = handleCheckout;
+        window.handleCheckin = handleCheckin;
+        window.openToolDetail = openToolDetail;
+        window.closeToolDetailModal = closeToolDetailModal;
+
+        // Check if user is already logged in and handle URL parameters (for QR code scanning)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const toolId = urlParams.get('tool_id') || urlParams.get('id');
+            
+            const crew = getCrewData();
+            if (crew) {
+                window.currentUser = crew;
+                document.getElementById('crewNameDisplay').textContent = 
+                    crew.name || crew.login_id || 'Crew Member';
+                showScreen('dashboardScreen');
+                
+                // Load all tools in the background
+                loadAllTools();
+                
+                // If there's a tool_id in URL and user is logged in, scan it automatically
+                if (toolId) {
+                    setTimeout(() => handleScanTool(toolId), 100);
+                }
+            } else {
+                // User not logged in
+                if (toolId) {
+                    // If there's a tool_id in URL but user is NOT logged in, show public screen
+                    // Tool ID will be preserved in URL for post-login auto-scan
+                    showScreen('publicScreen');
+                } else {
+                    showScreen('loginScreen');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
